@@ -1,7 +1,5 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 
-// Initialize GoogleGenAI inside functions to ensure it always uses the most up-to-date API key.
 export async function generateVibeCode(prompt: string, mood: string) {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
   const response = await ai.models.generateContent({
@@ -21,19 +19,16 @@ export async function generateVibeCode(prompt: string, mood: string) {
         },
         required: ["title", "code", "language", "explanation"]
       },
-      // Using thinkingBudget for complex text tasks (Gemini 3 Pro series)
       thinkingConfig: { thinkingBudget: 32768 }
     }
   });
 
   const text = response.text;
-  if (!text) {
-    throw new Error("The model did not return any text content.");
+  if (typeof text !== 'string') {
+    throw new Error("The model did not return a valid text response.");
   }
 
-  // Extract text and trim to prepare for JSON parsing
-  const jsonStr = text.trim();
-  return JSON.parse(jsonStr);
+  return JSON.parse(text.trim());
 }
 
 export async function getLearningRoadmap(topic: string) {
@@ -66,10 +61,9 @@ export async function getLearningRoadmap(topic: string) {
   });
 
   const text = response.text;
-  if (!text) {
-    throw new Error("The model did not return any text content.");
+  if (typeof text !== 'string') {
+    throw new Error("The model did not return a valid roadmap response.");
   }
 
-  const jsonStr = text.trim();
-  return JSON.parse(jsonStr);
+  return JSON.parse(text.trim());
 }

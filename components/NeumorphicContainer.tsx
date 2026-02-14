@@ -1,18 +1,22 @@
-
 import React from 'react';
 
-interface Props {
+export interface NeumorphicContainerProps {
   children: React.ReactNode;
   className?: string;
   inset?: boolean;
   onClick?: () => void;
 }
 
-const NeumorphicContainer: React.FC<Props> = ({ children, className = '', inset = false, onClick }) => {
+const NeumorphicContainer: React.FC<NeumorphicContainerProps> = ({ 
+  children, 
+  className = '', 
+  inset = false, 
+  onClick 
+}) => {
   const baseClass = inset ? 'neumorphic-inset' : 'neumorphic-flat';
   return (
     <div 
-      className={`${baseClass} rounded-2xl p-6 ${className}`}
+      className={`${baseClass} rounded-2xl p-6 ${className} cursor-pointer transition-all active:scale-[0.99]`}
       onClick={onClick}
     >
       {children}
