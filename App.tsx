@@ -15,17 +15,17 @@ import {
   Plus, 
   Search,
   BookOpen,
-  PieChart
+  PieChart,
+  Copy,
+  Check
 } from 'lucide-react';
+// @ts-ignore
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+// @ts-ignore
+import { oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
-declare global {
-  interface Window {
-    aistudio: {
-      hasSelectedApiKey: () => Promise<boolean>;
-      openSelectKey: () => Promise<void>;
-    };
-  }
-}
+// The aistudio property is already defined on the Window object in this environment.
+// Redefining it here caused a conflict with the existing AIStudio type.
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'vibe' | 'roadmap' | 'skills'>('vibe');
@@ -34,6 +34,7 @@ const App: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [vibeHistory, setVibeHistory] = useState<CodeVibe[]>([]);
   const [currentVibe, setCurrentVibe] = useState<any>(null);
+  const [copied, setCopied] = useState(false);
   
   const [roadmapTopic, setRoadmapTopic] = useState('');
   const [roadmapData, setRoadmapData] = useState<any>(null);
@@ -43,7 +44,9 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const checkKeyStatus = async () => {
+      // @ts-ignore - aistudio is globally provided
       if (window.aistudio && typeof window.aistudio.hasSelectedApiKey === 'function') {
+        // @ts-ignore
         const selected = await window.aistudio.hasSelectedApiKey();
         setHasApiKey(selected);
       }
@@ -52,9 +55,11 @@ const App: React.FC = () => {
   }, []);
 
   const handleOpenKeySelector = async () => {
+    // @ts-ignore - aistudio is globally provided
     if (window.aistudio && typeof window.aistudio.openSelectKey === 'function') {
+      // @ts-ignore
       await window.aistudio.openSelectKey();
-      // Assume success after triggering selector per instructions
+      // Assume success after triggering selector to mitigate race conditions
       setHasApiKey(true);
     }
   };
@@ -69,6 +74,7 @@ const App: React.FC = () => {
   const handleGenerateVibe = async () => {
     if (!vibePrompt) return;
     setIsGenerating(true);
+    setCurrentVibe(null);
     try {
       const result = await generateVibeCode(vibePrompt, selectedMood);
       setCurrentVibe(result);
@@ -90,6 +96,14 @@ const App: React.FC = () => {
       }
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleCopy = () => {
+    if (currentVibe?.code) {
+      navigator.clipboard.writeText(currentVibe.code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 
@@ -191,7 +205,7 @@ const App: React.FC = () => {
                 </div>
               ))}
             </div>
-          </NeumorphicContainer> {/* Fixed missing closing tag for sidebar profile container */}
+          </NeumorphicContainer>
 
           <NeumorphicContainer className="relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-4 opacity-10">
@@ -250,18 +264,49 @@ const App: React.FC = () => {
               </NeumorphicContainer>
 
               {currentVibe && (
-                <NeumorphicContainer className="bg-white/40">
+                <NeumorphicContainer className="bg-white/40 animate-in fade-in zoom-in duration-300">
                   <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-bold text-gray-800">{currentVibe.title}</h2>
-                    <span className="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                      {currentVibe.language}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <Terminal size={20} className="text-blue-600" />
+                      <h2 className="text-xl font-bold text-gray-800">{currentVibe.title}</h2>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                        {currentVibe.language}
+                      </span>
+                      <NeumorphicButton 
+                        onClick={handleCopy} 
+                        className="p-1 px-2 rounded-lg text-gray-500 hover:text-blue-600"
+                      >
+                        {copied ? <Check size={16} /> : <Copy size={16} />}
+                      </NeumorphicButton>
+                    </div>
                   </div>
-                  <div className="neumorphic-inset rounded-xl p-6 mb-6 overflow-x-auto">
-                    <pre className="text-sm text-gray-700">
-                      <code>{currentVibe.code}</code>
-                    </pre>
+                  
+                  <div className="neumorphic-inset rounded-xl mb-6 overflow-hidden relative group">
+                    <div className="max-h-[500px] overflow-auto">
+                      <SyntaxHighlighter 
+                        language={currentVibe.language.toLowerCase()} 
+                        style={oneLight}
+                        customStyle={{
+                          background: 'transparent',
+                          padding: '1.5rem',
+                          margin: 0,
+                          fontSize: '0.875rem',
+                          fontFamily: "'JetBrains Mono', monospace",
+                          borderRadius: '0.75rem',
+                        }}
+                        codeTagProps={{
+                          style: {
+                            fontFamily: 'inherit',
+                          }
+                        }}
+                      >
+                        {currentVibe.code}
+                      </SyntaxHighlighter>
+                    </div>
                   </div>
+
                   <div className="bg-gray-100/50 rounded-lg p-4 border border-white/50">
                     <p className="text-sm text-gray-600 leading-relaxed">
                       <strong className="text-gray-800">Explanation:</strong> {currentVibe.explanation}
@@ -270,12 +315,16 @@ const App: React.FC = () => {
                 </NeumorphicContainer>
               )}
 
-              {vibeHistory.length > 0 && (
+              {vibeHistory.length > 0 && (activeTab === 'vibe') && (
                 <div>
                   <h4 className="text-sm font-bold text-gray-500 mb-4 px-2 uppercase tracking-widest">Recent Vibes</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {vibeHistory.slice(0, 4).map((v) => (
-                      <NeumorphicContainer key={v.id} className="p-4 hover:scale-[1.02] transition-transform cursor-pointer">
+                      <NeumorphicContainer 
+                        key={v.id} 
+                        className="p-4 hover:scale-[1.02] transition-transform cursor-pointer"
+                        onClick={() => setCurrentVibe(v)}
+                      >
                         <div className="flex items-center gap-3">
                           <Terminal size={20} className="text-gray-400" />
                           <div className="flex-1 overflow-hidden">
