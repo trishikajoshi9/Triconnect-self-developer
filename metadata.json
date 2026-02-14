@@ -1,0 +1,8 @@
+{
+  "name": "Triconnect - Self Developer",
+  "description": "A premium neumorphic AI-powered coding companion and developer productivity suite for the self-taught developer.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
