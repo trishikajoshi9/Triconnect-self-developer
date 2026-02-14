@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import NeumorphicContainer from './components/NeumorphicContainer';
 import NeumorphicButton from './components/NeumorphicButton';
@@ -13,11 +12,11 @@ import {
   Terminal, 
   ChevronRight, 
   Plus, 
-  Search,
-  BookOpen,
-  PieChart,
-  Copy,
-  Check
+  Search, 
+  BookOpen, 
+  PieChart, 
+  Copy, 
+  Check 
 } from 'lucide-react';
 // @ts-ignore
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -36,16 +35,24 @@ const App: React.FC = () => {
   const [roadmapTopic, setRoadmapTopic] = useState('');
   const [roadmapData, setRoadmapData] = useState<any>(null);
 
-  // Mandatory API Key Selection flow for Gemini 3 Pro features
-  const [hasApiKey, setHasApiKey] = useState<boolean>(true);
+  // Mandatory API Key Selection flow check
+  const [hasApiKey, setHasApiKey] = useState<boolean | null>(null);
 
   useEffect(() => {
     const checkKeyStatus = async () => {
       // @ts-ignore - aistudio is globally provided by the environment
       if (window.aistudio && typeof window.aistudio.hasSelectedApiKey === 'function') {
-        // @ts-ignore
-        const selected = await window.aistudio.hasSelectedApiKey();
-        setHasApiKey(selected);
+        try {
+          // @ts-ignore
+          const selected = await window.aistudio.hasSelectedApiKey();
+          setHasApiKey(selected);
+        } catch (e) {
+          console.error("Failed to check API key status", e);
+          setHasApiKey(false);
+        }
+      } else {
+        // Fallback for environments without the aistudio global
+        setHasApiKey(!!process.env.API_KEY);
       }
     };
     checkKeyStatus();
@@ -54,9 +61,13 @@ const App: React.FC = () => {
   const handleOpenKeySelector = async () => {
     // @ts-ignore
     if (window.aistudio && typeof window.aistudio.openSelectKey === 'function') {
-      // @ts-ignore
-      await window.aistudio.openSelectKey();
-      setHasApiKey(true);
+      try {
+        // @ts-ignore
+        await window.aistudio.openSelectKey();
+        setHasApiKey(true);
+      } catch (e) {
+        console.error("Failed to open key selector", e);
+      }
     }
   };
 
@@ -119,6 +130,18 @@ const App: React.FC = () => {
     }
   };
 
+  // Initial loading state
+  if (hasApiKey === null) {
+    return (
+      <div className="min-h-screen bg-[#e0e5ec] flex items-center justify-center">
+        <div className="animate-pulse flex flex-col items-center gap-4">
+          <Cpu className="text-blue-600" size={48} />
+          <p className="text-gray-500 font-medium">Initializing Workspace...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!hasApiKey) {
     return (
       <div className="min-h-screen bg-[#e0e5ec] flex items-center justify-center p-4">
@@ -126,8 +149,8 @@ const App: React.FC = () => {
           <Cpu className="mx-auto text-blue-600 mb-6" size={64} />
           <h1 className="text-2xl font-bold text-gray-800 mb-4">Pro Access Required</h1>
           <p className="text-gray-600 mb-8 font-medium leading-relaxed">
-            To unlock Gemini 3 Pro features, you must select an API key from a paid GCP project.
-            Check the <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">billing docs</a>.
+            To unlock Gemini 3 Pro features and AI reasoning, you must select an API key from a paid GCP project.
+            Visit the <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">billing documentation</a> for more information.
           </p>
           <NeumorphicButton onClick={handleOpenKeySelector} className="w-full py-4 text-lg bg-blue-50 text-blue-700">
             Select Pro API Key
@@ -220,7 +243,7 @@ const App: React.FC = () => {
                       <textarea
                         value={vibePrompt}
                         onChange={(e) => setVibePrompt(e.target.value)}
-                        placeholder="Describe the logic or UI vibe you want..."
+                        placeholder="Describe the logic or UI vibe you want... e.g., 'A neumorphic card with Tailwind CSS'"
                         className="w-full neumorphic-inset rounded-xl p-4 text-gray-700 focus:outline-none h-24 resize-none"
                       />
                     </div>
@@ -241,7 +264,12 @@ const App: React.FC = () => {
                       disabled={isGenerating || !vibePrompt}
                       className="py-3 bg-blue-50 text-blue-700 flex items-center justify-center gap-2"
                     >
-                      {isGenerating ? 'Vibing...' : 'Generate Code'}
+                      {isGenerating ? 'Vibing...' : (
+                        <>
+                          <Zap size={18} />
+                          Generate Code
+                        </>
+                      )}
                     </NeumorphicButton>
                   </div>
                 </div>
@@ -324,7 +352,7 @@ const App: React.FC = () => {
                     type="text"
                     value={roadmapTopic}
                     onChange={(e) => setRoadmapTopic(e.target.value)}
-                    placeholder="Enter a tech stack... e.g. 'Cloudflare Workers'"
+                    placeholder="Enter a tech stack or topic... e.g. 'Cloudflare Workers'"
                     className="w-full neumorphic-inset rounded-xl py-3 pl-12 pr-4 text-gray-700 focus:outline-none"
                   />
                 </div>
@@ -338,10 +366,11 @@ const App: React.FC = () => {
               </NeumorphicContainer>
 
               {roadmapData && (
-                <div className="space-y-8">
+                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
                   <div className="text-center py-6">
-                    <h2 className="text-3xl font-extrabold text-gray-800">{roadmapData.topic}</h2>
+                    <h2 className="text-3xl font-extrabold text-gray-800 tracking-tight">{roadmapData.topic}</h2>
                   </div>
+
                   <div className="relative border-l-2 border-dashed border-gray-300 ml-6 pl-10 space-y-10">
                     {roadmapData.phases.map((phase: any, idx: number) => (
                       <div key={idx} className="relative">
@@ -351,10 +380,10 @@ const App: React.FC = () => {
                         <NeumorphicContainer className="bg-white/60">
                           <h3 className="text-xl font-bold text-gray-800 mb-4">{phase.phaseName}</h3>
                           <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {phase.milestones.map((m: string, midx: number) => (
+                            {phase.milestones.map((milestone: string, midx: number) => (
                               <li key={midx} className="flex items-center gap-3 text-gray-600">
                                 <div className="w-2 h-2 rounded-full bg-blue-400" />
-                                <span className="text-sm font-medium">{m}</span>
+                                <span className="text-sm font-medium">{milestone}</span>
                               </li>
                             ))}
                           </ul>
@@ -396,6 +425,7 @@ const App: React.FC = () => {
                     </div>
                   </div>
                 </NeumorphicContainer>
+                
                 <NeumorphicContainer className="bg-indigo-600 text-white">
                   <h4 className="font-bold mb-2">Next Milestone</h4>
                   <p className="text-sm opacity-90 mb-4">Mastering Edge Functions</p>
