@@ -3,7 +3,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 
 // Initialize GoogleGenAI inside functions to ensure it always uses the most up-to-date API key.
 export async function generateVibeCode(prompt: string, mood: string) {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
   const response = await ai.models.generateContent({
     model: 'gemini-3-pro-preview',
     contents: `Generate a high-quality, professional code snippet based on the following vibe: "${prompt}". 
@@ -26,13 +26,18 @@ export async function generateVibeCode(prompt: string, mood: string) {
     }
   });
 
+  const text = response.text;
+  if (!text) {
+    throw new Error("The model did not return any text content.");
+  }
+
   // Extract text and trim to prepare for JSON parsing
-  const jsonStr = response.text.trim();
+  const jsonStr = text.trim();
   return JSON.parse(jsonStr);
 }
 
 export async function getLearningRoadmap(topic: string) {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
     contents: `Create a comprehensive learning roadmap for: ${topic}. 
@@ -60,6 +65,11 @@ export async function getLearningRoadmap(topic: string) {
     }
   });
 
-  const jsonStr = response.text.trim();
+  const text = response.text;
+  if (!text) {
+    throw new Error("The model did not return any text content.");
+  }
+
+  const jsonStr = text.trim();
   return JSON.parse(jsonStr);
 }
