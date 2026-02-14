@@ -24,9 +24,6 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 // @ts-ignore
 import { oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
-// The aistudio property is already defined on the Window object in this environment.
-// Redefining it here caused a conflict with the existing AIStudio type.
-
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'vibe' | 'roadmap' | 'skills'>('vibe');
   const [vibePrompt, setVibePrompt] = useState('');
@@ -44,7 +41,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const checkKeyStatus = async () => {
-      // @ts-ignore - aistudio is globally provided
+      // @ts-ignore - aistudio is globally provided by the environment
       if (window.aistudio && typeof window.aistudio.hasSelectedApiKey === 'function') {
         // @ts-ignore
         const selected = await window.aistudio.hasSelectedApiKey();
@@ -55,11 +52,10 @@ const App: React.FC = () => {
   }, []);
 
   const handleOpenKeySelector = async () => {
-    // @ts-ignore - aistudio is globally provided
+    // @ts-ignore
     if (window.aistudio && typeof window.aistudio.openSelectKey === 'function') {
       // @ts-ignore
       await window.aistudio.openSelectKey();
-      // Assume success after triggering selector to mitigate race conditions
       setHasApiKey(true);
     }
   };
@@ -89,7 +85,6 @@ const App: React.FC = () => {
       setVibeHistory([newVibe, ...vibeHistory]);
     } catch (error: any) {
       console.error("Vibe generation failed", error);
-      // Reset key state if project is not found or billing issues occur
       if (error?.message?.includes("Requested entity was not found.")) {
         setHasApiKey(false);
         await handleOpenKeySelector();
@@ -124,7 +119,6 @@ const App: React.FC = () => {
     }
   };
 
-  // If API key is not selected, prompt the user (mandatory for Gemini 3 Pro usage)
   if (!hasApiKey) {
     return (
       <div className="min-h-screen bg-[#e0e5ec] flex items-center justify-center p-4">
@@ -132,8 +126,8 @@ const App: React.FC = () => {
           <Cpu className="mx-auto text-blue-600 mb-6" size={64} />
           <h1 className="text-2xl font-bold text-gray-800 mb-4">Pro Access Required</h1>
           <p className="text-gray-600 mb-8 font-medium leading-relaxed">
-            To unlock Gemini 3 Pro features and AI reasoning, you must select an API key from a paid GCP project.
-            Visit the <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">billing documentation</a> for more information.
+            To unlock Gemini 3 Pro features, you must select an API key from a paid GCP project.
+            Check the <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">billing docs</a>.
           </p>
           <NeumorphicButton onClick={handleOpenKeySelector} className="w-full py-4 text-lg bg-blue-50 text-blue-700">
             Select Pro API Key
@@ -145,7 +139,6 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#e0e5ec] p-4 md:p-8">
-      {/* Navbar */}
       <nav className="max-w-7xl mx-auto mb-8 flex flex-col md:flex-row justify-between items-center gap-6">
         <div className="flex items-center gap-3">
           <NeumorphicContainer className="p-2 rounded-xl">
@@ -179,10 +172,7 @@ const App: React.FC = () => {
         </div>
       </nav>
 
-      {/* Main Content Area */}
       <main className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        {/* Sidebar / Stats */}
         <aside className="lg:col-span-3 space-y-8">
           <NeumorphicContainer>
             <h3 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
@@ -219,7 +209,6 @@ const App: React.FC = () => {
           </NeumorphicContainer>
         </aside>
 
-        {/* Workspace */}
         <div className="lg:col-span-9 space-y-8">
           {activeTab === 'vibe' && (
             <div className="space-y-6">
@@ -231,8 +220,8 @@ const App: React.FC = () => {
                       <textarea
                         value={vibePrompt}
                         onChange={(e) => setVibePrompt(e.target.value)}
-                        placeholder="Describe the logic or UI vibe you want... e.g., 'A neumorphic glassmorphic login card with tailwind'"
-                        className="w-full neumorphic-inset rounded-xl p-4 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400/20 h-24 resize-none"
+                        placeholder="Describe the logic or UI vibe you want..."
+                        className="w-full neumorphic-inset rounded-xl p-4 text-gray-700 focus:outline-none h-24 resize-none"
                       />
                     </div>
                   </div>
@@ -252,12 +241,7 @@ const App: React.FC = () => {
                       disabled={isGenerating || !vibePrompt}
                       className="py-3 bg-blue-50 text-blue-700 flex items-center justify-center gap-2"
                     >
-                      {isGenerating ? 'Vibing...' : (
-                        <>
-                          <Zap size={18} />
-                          Generate Code
-                        </>
-                      )}
+                      {isGenerating ? 'Vibing...' : 'Generate Code'}
                     </NeumorphicButton>
                   </div>
                 </div>
@@ -274,16 +258,13 @@ const App: React.FC = () => {
                       <span className="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
                         {currentVibe.language}
                       </span>
-                      <NeumorphicButton 
-                        onClick={handleCopy} 
-                        className="p-1 px-2 rounded-lg text-gray-500 hover:text-blue-600"
-                      >
+                      <NeumorphicButton onClick={handleCopy} className="p-1 px-2 rounded-lg text-gray-500">
                         {copied ? <Check size={16} /> : <Copy size={16} />}
                       </NeumorphicButton>
                     </div>
                   </div>
                   
-                  <div className="neumorphic-inset rounded-xl mb-6 overflow-hidden relative group">
+                  <div className="neumorphic-inset rounded-xl mb-6 overflow-hidden relative">
                     <div className="max-h-[500px] overflow-auto">
                       <SyntaxHighlighter 
                         language={currentVibe.language.toLowerCase()} 
@@ -293,13 +274,6 @@ const App: React.FC = () => {
                           padding: '1.5rem',
                           margin: 0,
                           fontSize: '0.875rem',
-                          fontFamily: "'JetBrains Mono', monospace",
-                          borderRadius: '0.75rem',
-                        }}
-                        codeTagProps={{
-                          style: {
-                            fontFamily: 'inherit',
-                          }
                         }}
                       >
                         {currentVibe.code}
@@ -309,13 +283,13 @@ const App: React.FC = () => {
 
                   <div className="bg-gray-100/50 rounded-lg p-4 border border-white/50">
                     <p className="text-sm text-gray-600 leading-relaxed">
-                      <strong className="text-gray-800">Explanation:</strong> {currentVibe.explanation}
+                      <strong>Explanation:</strong> {currentVibe.explanation}
                     </p>
                   </div>
                 </NeumorphicContainer>
               )}
 
-              {vibeHistory.length > 0 && (activeTab === 'vibe') && (
+              {vibeHistory.length > 0 && activeTab === 'vibe' && (
                 <div>
                   <h4 className="text-sm font-bold text-gray-500 mb-4 px-2 uppercase tracking-widest">Recent Vibes</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -350,7 +324,7 @@ const App: React.FC = () => {
                     type="text"
                     value={roadmapTopic}
                     onChange={(e) => setRoadmapTopic(e.target.value)}
-                    placeholder="Enter a tech stack or topic... e.g. 'Cloudflare Workers & Rust'"
+                    placeholder="Enter a tech stack... e.g. 'Cloudflare Workers'"
                     className="w-full neumorphic-inset rounded-xl py-3 pl-12 pr-4 text-gray-700 focus:outline-none"
                   />
                 </div>
@@ -364,12 +338,10 @@ const App: React.FC = () => {
               </NeumorphicContainer>
 
               {roadmapData && (
-                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div className="space-y-8">
                   <div className="text-center py-6">
-                    <h2 className="text-3xl font-extrabold text-gray-800 tracking-tight">{roadmapData.topic}</h2>
-                    <p className="text-gray-500 mt-2 font-medium">Step-by-step Mastery Guide</p>
+                    <h2 className="text-3xl font-extrabold text-gray-800">{roadmapData.topic}</h2>
                   </div>
-
                   <div className="relative border-l-2 border-dashed border-gray-300 ml-6 pl-10 space-y-10">
                     {roadmapData.phases.map((phase: any, idx: number) => (
                       <div key={idx} className="relative">
@@ -379,10 +351,10 @@ const App: React.FC = () => {
                         <NeumorphicContainer className="bg-white/60">
                           <h3 className="text-xl font-bold text-gray-800 mb-4">{phase.phaseName}</h3>
                           <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {phase.milestones.map((milestone: string, midx: number) => (
+                            {phase.milestones.map((m: string, midx: number) => (
                               <li key={midx} className="flex items-center gap-3 text-gray-600">
                                 <div className="w-2 h-2 rounded-full bg-blue-400" />
-                                <span className="text-sm font-medium">{milestone}</span>
+                                <span className="text-sm font-medium">{m}</span>
                               </li>
                             ))}
                           </ul>
@@ -407,23 +379,9 @@ const App: React.FC = () => {
                     <span className="text-4xl font-extrabold text-blue-600">68%</span>
                     <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-1">Global Mastery</p>
                   </div>
-                  {/* Visual representation of a simple circular chart */}
                   <svg className="absolute inset-0 w-full h-full transform -rotate-90">
-                    <circle
-                      cx="50%" cy="50%" r="45%"
-                      stroke="rgba(255,255,255,0.5)"
-                      strokeWidth="12"
-                      fill="transparent"
-                    />
-                    <circle
-                      cx="50%" cy="50%" r="45%"
-                      stroke="#3b82f6"
-                      strokeWidth="12"
-                      fill="transparent"
-                      strokeDasharray="283"
-                      strokeDashoffset="90"
-                      strokeLinecap="round"
-                    />
+                    <circle cx="50%" cy="50%" r="45%" stroke="rgba(255,255,255,0.5)" strokeWidth="12" fill="transparent" />
+                    <circle cx="50%" cy="50%" r="45%" stroke="#3b82f6" strokeWidth="12" fill="transparent" strokeDasharray="283" strokeDashoffset="90" strokeLinecap="round" />
                   </svg>
                 </div>
               </NeumorphicContainer>
@@ -431,31 +389,16 @@ const App: React.FC = () => {
               <div className="space-y-6">
                 <NeumorphicContainer>
                   <div className="flex items-center gap-4">
-                    <div className="p-3 bg-orange-100 text-orange-600 rounded-xl">
-                      <Zap size={24} />
-                    </div>
+                    <div className="p-3 bg-orange-100 text-orange-600 rounded-xl"><Zap size={24} /></div>
                     <div>
                       <h4 className="font-bold text-gray-800">Streak: 12 Days</h4>
-                      <p className="text-sm text-gray-500">Keep up the daily coding vibe!</p>
+                      <p className="text-sm text-gray-500">Keep up the daily coding!</p>
                     </div>
                   </div>
                 </NeumorphicContainer>
-                
-                <NeumorphicContainer>
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-blue-100 text-blue-600 rounded-xl">
-                      <BookOpen size={24} />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-gray-800">4 Resources Read</h4>
-                      <p className="text-sm text-gray-500">From your Cloudflare roadmap.</p>
-                    </div>
-                  </div>
-                </NeumorphicContainer>
-
                 <NeumorphicContainer className="bg-indigo-600 text-white">
                   <h4 className="font-bold mb-2">Next Milestone</h4>
-                  <p className="text-sm opacity-90 mb-4">Mastering Edge Functions with Hono.js</p>
+                  <p className="text-sm opacity-90 mb-4">Mastering Edge Functions</p>
                   <div className="h-1.5 w-full bg-white/20 rounded-full overflow-hidden">
                     <div className="h-full bg-white w-2/3" />
                   </div>
@@ -466,9 +409,8 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      {/* Floating Action / Support */}
       <div className="fixed bottom-8 right-8">
-        <NeumorphicButton className="w-14 h-14 rounded-full flex items-center justify-center p-0 shadow-lg hover:shadow-xl">
+        <NeumorphicButton className="w-14 h-14 rounded-full flex items-center justify-center p-0 shadow-lg">
           <Settings size={28} className="text-gray-500" />
         </NeumorphicButton>
       </div>
